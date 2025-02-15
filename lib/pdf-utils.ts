@@ -193,3 +193,20 @@ export async function modifySpecificField(instance: any, fieldId: string, fieldN
         console.error('Error modifying field:', error);
     }
 }
+
+export async function fillAnalyzedFields(instance: any, filledForms: any) {
+  for (const [fieldName, value] of Object.entries(filledForms)) {
+    try {
+      await instance.getFormFields().then((fields: any) => {
+        const field = fields.find((f: any) => 
+          f.name.toLowerCase().includes(fieldName.toLowerCase())
+        );
+        if (field) {
+          instance.setFormFieldValue(field.name, value);
+        }
+      });
+    } catch (error) {
+      console.error(`Failed to fill field ${fieldName}:`, error);
+    }
+  }
+}

@@ -5,6 +5,8 @@ import { createClient } from "@/utils/supabase/server";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
+import { auth } from "@/auth";
+import { db } from "@/lib/db";
 
 export const signUpAction = async (formData: FormData) => {
   const email = formData.get("email")?.toString();
@@ -221,17 +223,36 @@ export const updateUserProfile = async (formData: FormData) => {
   return encodedRedirect("success", "/protected/profile", "Profile updated successfully");
 };
 
-export async function uploadDocument(formData: FormData) {
-  const supabase = await createClient();
-  
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) {
-    return encodedRedirect("error", "/documents", "You must be logged in to upload documents");
+// We need to make sure uploadDocument returns this shape:
+type UploadResult = {
+  documentId?: string;
+  error?: string;
+}
+
+export async function uploadDocument(formData: FormData): Promise<UploadResult> {
+  // Add type definition for better error handling
+  interface UploadResult {
+    documentId?: string;
+    error?: string;
   }
 
+  const supabase = await createClient();
+  
+  // Add error handling for file type
   const file = formData.get('document') as File;
-  if (!file) {
-    return encodedRedirect("error", "/documents", "No file selected");
+  if (!file || !file.type.includes('pdf')) {
+    return { error: "Only PDF files are allowed" };
+  }
+
+  // Add size check on server side too
+  const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+  if (file.size > MAX_FILE_SIZE) {
+    return { error: "File size exceeds 10MB limit" };
+  }
+
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) {
+    return { error: "You must be logged in to upload documents" };
   }
 
   // Convert the file to ArrayBuffer for upload
@@ -251,27 +272,29 @@ export async function uploadDocument(formData: FormData) {
     });
 
   if (error) {
-    return encodedRedirect("error", "/documents", "Failed to upload document");
+    return { error: "Failed to upload document" };
   }
 
   // Save document metadata to database
-  const { error: dbError } = await supabase
+  const { data: documentData, error: dbError } = await supabase
     .from('documents')
     .insert({
       user_id: user.id,
       file_name: file.name,
       file_path: data.path,
       file_size: file.size,
-    });
+    })
+    .select()
+    .single();
 
   if (dbError) {
     // If database insert fails, try to delete the uploaded file
     await supabase.storage.from('documents').remove([data.path]);
-    return encodedRedirect("error", "/documents", "Failed to save document metadata");
+    return { error: "Failed to save document metadata" };
   }
 
   revalidatePath('/documents');
-  return encodedRedirect("success", "/documents", "Document uploaded successfully");
+  return { documentId: documentData.id };
 }
 
 export async function deleteDocument(formData: FormData) {
@@ -330,4 +353,55 @@ export async function deleteDocument(formData: FormData) {
 
   revalidatePath('/documents');
   return encodedRedirect("success", "/documents", "Document deleted successfully");
+}
+
+export async function getUserProfile() {
+    const supabase = await createClient();
+    
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+        return null;
+    }
+
+    // Get profile data including custom fields
+    const { data: profile, error } = await supabase
+        .from('user_profiles')
+        .select(`
+            id,
+            first_name,
+            last_name,
+            email,
+            phone_number,
+            address,
+            birthday,
+            custom_fields,
+            updated_at,
+            created_at
+        `)
+        .eq('id', user.id)
+        .single();
+
+    if (error) {
+        console.error('Error fetching profile:', error);
+        return null;
+    }
+
+    // Process custom fields to ensure they match the CustomField interface
+    const processedCustomFields = Object.entries(profile.custom_fields || {}).reduce((acc, [key, field]) => {
+        if (typeof field === 'object' && field !== null) {
+            acc[key] = {
+                id: field.id || key,
+                label: field.label || key,
+                type: field.type || 'text',
+                value: field.value || ''
+            };
+        }
+        return acc;
+    }, {} as Record<string, CustomField>);
+
+    return {
+        ...profile,
+        email: user.email,
+        custom_fields: processedCustomFields
+    };
 }

@@ -44,9 +44,9 @@ export default function RootLayout({
                   <Link href={"/"}>Formzilla</Link>
                   <Link 
                     href={"/documents"} 
-                    className="hover:text-foreground/80 transition"
+                    className="hover:text-foreground/80 transition font-normal"
                   >
-                    Documents
+                    Upload Document
                   </Link>
                 </div>
                 {!hasEnvVars ? <EnvVarWarning /> : <HeaderAuth />}
