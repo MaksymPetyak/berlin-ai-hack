@@ -103,8 +103,6 @@ interface MarkedField {
 
 const PDFViewer: React.FC<PDFViewerProps> = ({
     url,
-    width = '100%',
-    height = '100vh'
 }) => {
     const containerRef = useRef<HTMLDivElement | null>(null);
     const [instance, setInstance] = useState<any>(null);
@@ -172,7 +170,7 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
     };
 
     return (
-        <div className="fixed inset-0 flex">
+        <div className="fixed inset-0 flex mt-16">
             {/* Main PDF viewer */}
             <div className="flex-1 relative bg-gray-100">
                 <div

@@ -42,14 +42,10 @@ export default async function DocumentPage({ params }: DocumentPageProps) {
   }
 
   return (
-    <main className="h-screen w-screen flex">
-      <div className="w-full h-full p-4">
-        <div className="relative bg-white rounded-lg shadow-lg overflow-hidden w-full h-full">
-          <PDFViewer 
-            url={data.signedUrl}
-          />
-        </div>
-      </div>
-    </main>
+    <div className="min-w-screen h-full">
+      <PDFViewer
+        url={data.signedUrl}
+      />
+    </div>
   )
 } 
