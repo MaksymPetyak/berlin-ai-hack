@@ -1,6 +1,6 @@
 import { createGoogleGenerativeAI } from '@ai-sdk/google';
-import { generateText } from 'ai';
-
+import { generateObject } from 'ai';
+import { z } from 'zod';
 
 // Create a custom instance with settings
 const google = createGoogleGenerativeAI({
@@ -15,29 +15,36 @@ type MessageContent = {
     image: string;
 };
 
-
 const PROMPT = `
 You are a form filling agent. 
-You will be given a form and a list of fields to fill.
-Some fields will be marked like "idx_{num}" to indicate what is the id of the field.
+You will be given a form with some fields.
+Unfilled fields will be marked like "idx_{num}" to indicate what is the id of the field.
 You will also be provided with a knowledge base to use to fill out the form.
-Your job is to return a list of field ids and how they should be filled.
-YOU MUST OUTPUT JSON IN THE FOLLOWING FORMAT:
-[
-   {
-      "field_id": int,
-      "value": string,
-   },
-   ...
-]
-`
+Your job is to generate an answer of how to fill the form.
 
-export async function analyzeImages(base64Images: string[], knowledgeBase: string): Promise<string> {
+You must output JSON in the following format:
+{
+    "field_id": string ("idx_{num}"),
+    "value": string ("value that goes into the field")
+}
+`;
+
+const FormFieldSchema = z.object({
+    field_id: z.string(),
+    value: z.string()
+});
+
+const FormFieldsResponseSchema = z.array(FormFieldSchema);
+
+export type FillFormOutput = z.infer<typeof FormFieldSchema>;
+
+export async function analyzeImages(base64Images: string[], knowledgeBase: string): Promise<FillFormOutput[]> {
     try {
         const model = google('gemini-2.0-flash-001');
 
-        const result = await generateText({
+        const { object } = await generateObject({
             model,
+            schema: FormFieldsResponseSchema,
             messages: [
                 {
                     role: 'system',
@@ -59,7 +66,7 @@ export async function analyzeImages(base64Images: string[], knowledgeBase: strin
             ]
         });
 
-        return result.text;
+        return object;
     } catch (error) {
         console.error('Error analyzing images:', error);
         throw error;
