@@ -9,17 +9,8 @@ import { CheckCircle2, XCircle } from 'lucide-react';
 
 interface PDFViewerProps {
     url: string;
-    width?: string;
-    height?: string;
+    knowledgeBase: string;
 }
-
-const KNOWLEDGE_BASE = `
-NAME: Maksym Petyak
-EMAIL: maksym.petyak@gmail.com
-PHONE: +380671234567
-ADDRESS: 123 Main St, Anytown, USA
-`
-
 interface FormFieldCardProps {
     field: FillFormOutput;
     instance: any;
@@ -103,6 +94,7 @@ interface MarkedField {
 
 const PDFViewer: React.FC<PDFViewerProps> = ({
     url,
+    knowledgeBase,
 }) => {
     const containerRef = useRef<HTMLDivElement | null>(null);
     const [instance, setInstance] = useState<any>(null);
@@ -147,7 +139,7 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
             setMarkedFields(marked);
 
             const images = await convertPagesToImages(instance);
-            const filledValues = await analyzeImages(images, KNOWLEDGE_BASE);
+            const filledValues = await analyzeImages(images, knowledgeBase);
 
             // Map the filled values to include the original field names from markedFields
             const mappedFilledValues = filledValues.map(filled => {
