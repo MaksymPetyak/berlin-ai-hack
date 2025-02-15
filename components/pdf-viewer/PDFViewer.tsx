@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { Button } from '../ui/button';
-import { convertPagesToImages, getAsImages, markFormFields, modifySpecificField } from '@/lib/pdf-utils';
+import { convertPagesToImages, getAsImages, markFormFields, modifySpecificField, fillAnalyzedFields } from '@/lib/pdf-utils';
 import { analyzeImages } from '@/lib/google-ai-utils';
 
 interface PDFViewerProps {
@@ -12,10 +12,10 @@ interface PDFViewerProps {
 }
 
 const KNOWLEDGE_BASE = `
-Name: Maksym Petyak
-Email: maksym.petyak@gmail.com
-Phone: +380671234567
-Address: 123 Main St, Anytown, USA
+NAME: Maksym Petyak
+EMAIL: maksym.petyak@gmail.com
+PHONE: +380671234567
+ADDRESS: 123 Main St, Anytown, USA
 `
 
 const PDFViewer: React.FC<PDFViewerProps> = ({
@@ -74,6 +74,10 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
             );
 
             console.log("Filled forms:", filledForms);
+
+            // Fill the form with analyzed values
+            await fillAnalyzedFields(instance, filledForms);
+            console.log("Form filled with analyzed values");
 
         } catch (error) {
             console.error('Analysis failed:', error);

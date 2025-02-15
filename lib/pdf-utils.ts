@@ -117,7 +117,7 @@ export async function markFormFields(instance: any): Promise<void> {
         for (const field of formFields) {
             try {
                 // Generate sequential ID
-                const uniqueId = `${fieldNumber}`;
+                const uniqueId = `idx_${fieldNumber}`;
 
                 // Log field details
                 console.log('Processing field:', {
@@ -146,7 +146,6 @@ export async function markFormFields(instance: any): Promise<void> {
 
                 // Increment counter for next field
                 fieldNumber++;
-
             } catch (error) {
                 console.error(`Error processing field ${field.name}:`, error);
                 // Continue with next field
@@ -191,5 +190,38 @@ export async function modifySpecificField(instance: any, fieldId: string, fieldN
 
     } catch (error) {
         console.error('Error modifying field:', error);
+    }
+}
+
+export async function fillAnalyzedFields(instance: any, analyzedFields: { field_id: string; value: string }[]): Promise<void> {
+    try {
+        // Get all form fields
+        const formFields = await instance.getFormFields();
+
+        // Create an object to store the updates
+        const updatedFormFieldValues: { [key: string]: string } = {};
+
+        // Go through each form field
+        formFields.forEach((field: any) => {
+            // Check if the current value is a number (our ID)
+            const currentValue = field.value?.toString() || '';
+
+            // Find if we have an analyzed value for this ID
+            const analyzedField = analyzedFields.find(af => af.field_id === currentValue);
+            if (analyzedField) {
+                    updatedFormFieldValues[field.name] = analyzedField.value;
+                console.log(`Updating field ${field.name} with value ${analyzedField.value}`);
+            }
+        });
+
+        // Apply all updates at once
+        if (Object.keys(updatedFormFieldValues).length > 0) {
+            await instance.setFormFieldValues(updatedFormFieldValues);
+            console.log('Updated form fields with analyzed values');
+        }
+
+    } catch (error) {
+        console.error('Error filling analyzed fields:', error);
+        throw error;
     }
 }
