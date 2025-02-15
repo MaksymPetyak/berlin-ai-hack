@@ -16,14 +16,14 @@ export default async function DocumentsPage() {
   return (
     <div className="flex-1 w-full flex flex-col gap-6 items-center">
       <div className="w-full max-w-xl flex flex-col gap-6">
-        <h1 className="text-2xl font-semibold">Upload Document</h1>
+        <h1 className="text-2xl font-semibold">View Documents</h1>
         
         <div className="bg-muted p-6 rounded-lg">
           {user ? (
             <UploadForm />
           ) : (
             <div className="text-center">
-              <p className="mb-4">Please sign in to upload documents</p>
+              <p className="mb-4">Please sign in to view your documents</p>
               <Link
                 href="/sign-in"
                 className="bg-primary text-primary-foreground px-4 py-2 rounded-md hover:bg-primary/90 transition"

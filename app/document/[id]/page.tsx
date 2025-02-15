@@ -34,7 +34,7 @@ export default async function DocumentPage({ params }: DocumentPageProps) {
   const { data, error: signedUrlError } = await supabase
     .storage
     .from('documents')
-    .createSignedUrl(document.file_path, 3600) // Changed from storage_path to file_path
+    .createSignedUrl(document.file_path, 3600) 
 
   if (signedUrlError || !data?.signedUrl) {
     console.error('Failed to get signed URL:', signedUrlError)

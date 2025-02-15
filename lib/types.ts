@@ -20,4 +20,16 @@ export interface UserProfile {
     custom_fields: Record<string, CustomField>;
     updated_at?: string;
     created_at?: string;
+}
+
+export interface ApiResponse<T> {
+  data?: T;
+  error?: string;
+  status: number;
+}
+
+export interface UploadResponse {
+  success: boolean;
+  documentId?: string;
+  error?: string;
 } 
