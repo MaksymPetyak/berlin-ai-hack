@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { Button } from '../ui/button';
-import { markFormFields, modifySpecificField } from '@/lib/pdf-utils';
+import { convertPagesToImages, getAsImages, markFormFields, modifySpecificField } from '@/lib/pdf-utils';
 import { analyzeImages } from '@/lib/google-ai-utils';
 
 interface PDFViewerProps {
@@ -10,6 +10,13 @@ interface PDFViewerProps {
     width?: string;
     height?: string;
 }
+
+const KNOWLEDGE_BASE = `
+Name: Maksym Petyak
+Email: maksym.petyak@gmail.com
+Phone: +380671234567
+Address: 123 Main St, Anytown, USA
+`
 
 const PDFViewer: React.FC<PDFViewerProps> = ({
     url,
@@ -54,35 +61,19 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
         try {
             setIsAnalyzing(true);
 
-            // Print initial state
-            // console.log('Initial form state:');
-            // await printFormState(instance);
-
             // Try to modify specific field by name
-            // await modifySpecificField(instance, "107", "Textfield");
             await markFormFields(instance);
 
-            // Print state after modification
-            // console.log('Form state after modification:');
-            // await printFormState(instance);
+            // Get pages as images
+            const images = await convertPagesToImages(instance);
 
-            // Mark all form fields
-            // await markFormFields(instance);
-            // console.log('Marked form fields');
+            // Analyze images
+            const filledForms = await analyzeImages(
+                images,
+                KNOWLEDGE_BASE
+            );
 
-            // // Get pages as images
-            // const images = await getAsImages(instance);
-
-            // console.log(`Got ${images.length} images`);
-
-            // // Analyze images
-            // const analysis = await analyzeImages(
-            //     process.env.NEXT_PUBLIC_GOOGLE_AI_API_KEY!,
-            //     images,
-            //     "Analyze this page and its annotations. Describe what you see."
-            // );
-
-            // console.log('Analysis result:', analysis);
+            console.log("Filled forms:", filledForms);
 
         } catch (error) {
             console.error('Analysis failed:', error);

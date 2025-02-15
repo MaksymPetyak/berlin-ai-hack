@@ -1,4 +1,4 @@
-import type PSPDFKit from 'pspdfkit';
+import PSPDFKit from 'pspdfkit';
 
 interface FormField {
     id: string;
@@ -8,23 +8,44 @@ interface FormField {
     type: string;
 }
 
+async function convertUrlToBase64(url: string): Promise<string> {
+    const response = await fetch(url);
+    const blob = await response.blob();
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onloadend = () => {
+            const base64String = reader.result as string;
+            // Remove the data URL prefix (e.g., "data:image/png;base64,")
+            const base64 = base64String.split(',')[1];
+            resolve(base64);
+        };
+        reader.onerror = reject;
+        reader.readAsDataURL(blob);
+    });
+}
+
 export async function convertPagesToImages(instance: any): Promise<string[]> {
-    const imageUrls: string[] = [];
+    const base64Images: string[] = [];
 
     for (let i = 0; i < instance.totalPageCount; i++) {
         // Get page width for proper rendering
         const { width } = instance.pageInfoForIndex(i);
 
-        // Render page as image
+        // Render page as image URL with consistent parameters
         const imageUrl = await instance.renderPageAsImageURL(
-            { width },
+            {
+                width,
+                imageType: 'image/png'
+            },
             i
         );
 
-        imageUrls.push(imageUrl);
+        const base64Image = await convertUrlToBase64(imageUrl);
+        base64Images.push(base64Image);
     }
 
-    return imageUrls;
+    console.log("Got base64 images");
+    return base64Images;
 }
 
 export async function getAsImages(
@@ -36,16 +57,17 @@ export async function getAsImages(
         // Get page dimensions
         const { width } = instance.pageInfoForIndex(i);
 
-        // Render page as image blob
-        const imageBlob = await instance.renderPageAsImageBlob({
-            width,
-            imageType: 'image/png'
-        }, i);
+        // Render page as image blob with consistent parameters
+        const imageBlob = await instance.renderPageAsImageBlob(
+            {
+                width,
+                imageType: 'image/png'
+            },
+            i
+        );
 
         // Convert blob to array buffer
         const arrayBuffer = await imageBlob.arrayBuffer();
-
-        // Convert to Uint8Array
         const uint8Array = new Uint8Array(arrayBuffer);
 
         images.push({
@@ -154,22 +176,6 @@ export async function modifySpecificField(instance: any, fieldId: string, fieldN
             return;
         }
 
-        // Log everything about the form field for debugging
-        console.log('Form Field Details:', {
-            name: formField.name,
-            id: formField.id,
-            type: formField.type,
-            value: formField.value,
-            defaultValue: formField.defaultValue,
-            label: formField.label,
-            pageIndex: formField.pageIndex,
-            required: formField.required,
-            readOnly: formField.readOnly,
-            customData: formField.customData,
-            options: formField.options,
-            widgets: formField.widgets,
-        });
-
         // Create an object with just this field's new value
         const updatedFormFieldValues: { [key: string]: string } = {
             [fieldName]: "test test"
@@ -187,35 +193,3 @@ export async function modifySpecificField(instance: any, fieldId: string, fieldN
         console.error('Error modifying field:', error);
     }
 }
-
-export async function fillFormFieldsRandomly(instance: any): Promise<void> {
-    try {
-        // Get all form fields
-        const formFields = await instance.getFormFields();
-
-        // Create an object to store field values
-        const updatedFormFieldValues: { [key: string]: string } = {};
-
-        // Process each form field
-        let count = 0;
-        formFields.forEach((formField: any) => {
-            if (count < 5) {
-                // Generate a random value (for demo purposes)
-                const randomValue = `Value_${Math.floor(Math.random() * 1000)}`;
-
-                // Add to our update object
-                updatedFormFieldValues[formField.name] = randomValue;
-
-                console.log(`Setting ${formField.name} to ${randomValue}`);
-                count++;
-            }
-        });
-
-        // Update all fields at once
-        await instance.setFormFieldValues(updatedFormFieldValues);
-
-        console.log('Updated all form fields with random values');
-    } catch (error) {
-        console.error('Error filling form fields:', error);
-    }
-} 
