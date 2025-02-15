@@ -1,42 +1,20 @@
-import NextLogo from "./next-logo";
-import SupabaseLogo from "./supabase-logo";
+import Image from 'next/image'
 
 export default function Header() {
   return (
     <div className="flex flex-col gap-16 items-center">
-      <div className="flex gap-8 justify-center items-center">
-        <a
-          href="https://supabase.com/?utm_source=create-next-app&utm_medium=template&utm_term=nextjs"
-          target="_blank"
-          rel="noreferrer"
-        >
-          <SupabaseLogo />
-        </a>
-        <span className="border-l rotate-45 h-6" />
-        <a href="https://nextjs.org/" target="_blank" rel="noreferrer">
-          <NextLogo />
-        </a>
+      <h1 className="text-3xl lg:text-4xl font-bold text-center">Welcome to Formzilla</h1>
+      <div className="flex justify-center items-center">
+        <Image
+          src="/Overworked-Employee-3--Streamline-Milano.png"
+          alt="Overworked Employee"
+          width={200}  // adjust these values based on your needs
+          height={200} // adjust these values based on your needs
+          className="mb-4"  // adds some margin at the bottom
+        />
       </div>
-      <h1 className="sr-only">Supabase and Next.js Starter Template</h1>
       <p className="text-3xl lg:text-4xl !leading-tight mx-auto max-w-xl text-center">
-        The fastest way to build apps with{" "}
-        <a
-          href="https://supabase.com/?utm_source=create-next-app&utm_medium=template&utm_term=nextjs"
-          target="_blank"
-          className="font-bold hover:underline"
-          rel="noreferrer"
-        >
-          Supabase
-        </a>{" "}
-        and{" "}
-        <a
-          href="https://nextjs.org/"
-          target="_blank"
-          className="font-bold hover:underline"
-          rel="noreferrer"
-        >
-          Next.js
-        </a>
+        We make paperwork go poof✨{" "}
       </p>
       <div className="w-full p-[1px] bg-gradient-to-r from-transparent via-foreground/10 to-transparent my-8" />
     </div>

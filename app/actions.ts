@@ -4,6 +4,7 @@ import { encodedRedirect } from "@/utils/utils";
 import { createClient } from "@/utils/supabase/server";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
+import { revalidatePath } from "next/cache";
 
 export const signUpAction = async (formData: FormData) => {
   const email = formData.get("email")?.toString();
@@ -132,3 +133,201 @@ export const signOutAction = async () => {
   await supabase.auth.signOut();
   return redirect("/sign-in");
 };
+
+export const createArticle = async (formData: FormData) => {
+  const supabase = await createClient();
+  const title = formData.get('title');
+  const content = formData.get('content');
+  
+  const { data, error } = await supabase
+    .from('articles')
+    .insert([{ title, content }]);
+};
+
+export const createKnowledgeEntry = async (formData: FormData) => {
+  const supabase = await createClient();
+  const title = formData.get('title') as string;
+  const content = formData.get('content') as string;
+  
+  const { data: { user } } = await supabase.auth.getUser();
+  
+  if (!user) {
+    return encodedRedirect("error", "/sign-in", "Must be logged in");
+  }
+
+  const { data, error } = await supabase
+    .from('knowledge_entries')
+    .insert([{ 
+      title, 
+      content,
+      user_id: user.id 
+    }]);
+
+  if (error) {
+    return encodedRedirect("error", "/knowledge", error.message);
+  }
+
+  return encodedRedirect("success", "/knowledge", "Entry created successfully");
+};
+
+export const updateUserProfile = async (formData: FormData) => {
+  const supabase = await createClient();
+  
+  const { data: { user } } = await supabase.auth.getUser();
+  
+  if (!user) {
+    console.log("No user found");
+    return encodedRedirect("error", "/sign-in", "Must be logged in");
+  }
+
+  // Get custom fields
+  const customKeys = formData.getAll('custom_keys[]');
+  const customValues = formData.getAll('custom_values[]');
+  
+  // Create custom fields object
+  const customFields = customKeys.reduce((acc, key, index) => {
+    if (key && customValues[index]) {
+      const value = customValues[index]?.toString() || '';
+      // Attempt to convert to number if possible
+      const numValue = Number(value);
+      acc[key.toString()] = !isNaN(numValue) ? numValue : value;
+    }
+    return acc;
+  }, {} as Record<string, string | number>);
+
+  const profileData = { 
+    id: user.id,
+    first_name: formData.get('first_name') as string,
+    last_name: formData.get('last_name') as string,
+    birthday: formData.get('birthday') as string,
+    phone_number: formData.get('phone_number') as string,
+    address: formData.get('address') as string,
+    custom_fields: customFields,
+    updated_at: new Date().toISOString()
+  };
+
+  console.log("Attempting to save profile:", profileData);
+
+  const { data, error } = await supabase
+    .from('user_profiles')
+    .upsert(profileData);
+
+  if (error) {
+    console.error("Supabase error:", error);
+    return encodedRedirect("error", "/protected/profile", error.message);
+  }
+
+  console.log("Profile updated successfully:", data);
+  return encodedRedirect("success", "/protected/profile", "Profile updated successfully");
+};
+
+export async function uploadDocument(formData: FormData) {
+  const supabase = await createClient();
+  
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) {
+    return encodedRedirect("error", "/documents", "You must be logged in to upload documents");
+  }
+
+  const file = formData.get('document') as File;
+  if (!file) {
+    return encodedRedirect("error", "/documents", "No file selected");
+  }
+
+  // Convert the file to ArrayBuffer for upload
+  const arrayBuffer = await file.arrayBuffer();
+  const fileBuffer = new Uint8Array(arrayBuffer);
+
+  // Generate a unique filename
+  const timestamp = Date.now();
+  const fileName = `${user.id}-${timestamp}-${file.name}`;
+
+  // Upload file to Supabase Storage
+  const { data, error } = await supabase
+    .storage
+    .from('documents')
+    .upload(fileName, fileBuffer, {
+      contentType: file.type
+    });
+
+  if (error) {
+    return encodedRedirect("error", "/documents", "Failed to upload document");
+  }
+
+  // Save document metadata to database
+  const { error: dbError } = await supabase
+    .from('documents')
+    .insert({
+      user_id: user.id,
+      file_name: file.name,
+      file_path: data.path,
+      file_size: file.size,
+    });
+
+  if (dbError) {
+    // If database insert fails, try to delete the uploaded file
+    await supabase.storage.from('documents').remove([data.path]);
+    return encodedRedirect("error", "/documents", "Failed to save document metadata");
+  }
+
+  revalidatePath('/documents');
+  return encodedRedirect("success", "/documents", "Document uploaded successfully");
+}
+
+export async function deleteDocument(formData: FormData) {
+  const supabase = await createClient();
+  
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) {
+    return encodedRedirect("error", "/documents", "You must be logged in to delete documents");
+  }
+
+  const filePath = formData.get('filePath') as string;
+  
+  // First, check if the document exists and get its ID
+  const { data: existingDoc, error: fetchError } = await supabase
+    .from('documents')
+    .select('id, file_path')
+    .eq('file_path', filePath)
+    .eq('user_id', user.id)
+    .single();
+
+  if (fetchError || !existingDoc) {
+    console.error('No document found:', { filePath, error: fetchError });
+    return encodedRedirect("error", "/documents", "Document not found");
+  }
+
+  // Delete using the document ID instead of file_path
+  const { data: deletedData, error: dbError } = await supabase
+    .from('documents')
+    .delete()
+    .eq('id', existingDoc.id)  // Use ID for more reliable deletion
+    .select();
+
+  console.log('Database deletion result:', {
+    deletedData,
+    error: dbError,
+    documentId: existingDoc.id
+  });
+
+  if (dbError) {
+    console.error('Database deletion error:', dbError);
+    return encodedRedirect("error", "/documents", "Failed to delete document metadata");
+  }
+
+  // Only delete from storage if database deletion was successful
+  if (deletedData && deletedData.length > 0) {
+    const { error: storageError } = await supabase
+      .storage
+      .from('documents')
+      .remove([filePath]);
+
+    if (storageError) {
+      console.error('Storage deletion error:', storageError);
+      // Consider recreating the database record if storage deletion fails
+    }
+  }
+
+  revalidatePath('/documents');
+  return encodedRedirect("success", "/documents", "Document deleted successfully");
+}
