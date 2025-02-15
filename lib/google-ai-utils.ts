@@ -26,12 +26,14 @@ You must output JSON in the following format:
 {
     "field_id": string ("idx_{num}"),
     "value": string ("value that goes into the field")
+    "name": string ("name of the field, try to be as close to the title used in the document as possible")
 }
 `;
 
 const FormFieldSchema = z.object({
     field_id: z.string(),
-    value: z.string()
+    value: z.string(),
+    name: z.string()
 });
 
 const FormFieldsResponseSchema = z.array(FormFieldSchema);
