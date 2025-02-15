@@ -105,8 +105,16 @@ export async function setFormFieldValues(instance: any, fields: FormField[]): Pr
     }
 }
 
-export async function markFormFields(instance: any): Promise<void> {
+
+interface MarkedField {
+    field_id: string;
+    name: string;
+    marked_value: string;
+}
+
+export async function markFormFields(instance: any): Promise<MarkedField[]> {
     console.log('Starting to mark form fields...');
+    const markedFields: MarkedField[] = [];
 
     try {
         // Get all form fields
@@ -138,6 +146,12 @@ export async function markFormFields(instance: any): Promise<void> {
                     continue;
                 } else {
                     singleFieldUpdate[field.name] = uniqueId;
+                    // Add to our marked fields list
+                    markedFields.push({
+                        field_id: uniqueId,
+                        name: field.name,
+                        marked_value: uniqueId
+                    });
                 }
 
                 // Update just this field
@@ -154,8 +168,10 @@ export async function markFormFields(instance: any): Promise<void> {
         }
 
         console.log('Completed marking form fields');
+        return markedFields;
     } catch (error) {
         console.error('Error in markFormFields:', error);
+        return [];
     }
 }
 
@@ -209,7 +225,7 @@ export async function fillAnalyzedFields(instance: any, analyzedFields: { field_
             // Find if we have an analyzed value for this ID
             const analyzedField = analyzedFields.find(af => af.field_id === currentValue);
             if (analyzedField) {
-                    updatedFormFieldValues[field.name] = analyzedField.value;
+                updatedFormFieldValues[field.name] = analyzedField.value;
                 console.log(`Updating field ${field.name} with value ${analyzedField.value}`);
             }
         });
@@ -223,5 +239,136 @@ export async function fillAnalyzedFields(instance: any, analyzedFields: { field_
     } catch (error) {
         console.error('Error filling analyzed fields:', error);
         throw error;
+    }
+}
+
+export async function highlightFormField(instance: any, fieldId: string): Promise<void> {
+    try {
+        const formFields = await instance.getFormFields();
+        console.log('All form fields:', formFields.map((f: any) => ({ name: f.name, value: f.value })));
+
+        // First get all form fields to find the one with matching name
+        const formField = formFields.find(
+            (field: any) => field.name === fieldId
+        );
+
+        if (!formField) {
+            console.log(`No field found with name ${fieldId}. Available fields:`,
+                formFields.map((f: any) => f.name));
+            return;
+        }
+
+        // Get total page count
+        const totalPages = instance.totalPageCount;
+        let widget = null;
+
+        // Search through all pages for the widget
+        for (let i = 0; i < totalPages; i++) {
+            const annotations = await instance.getAnnotations(i);
+            widget = annotations.find(
+                (annotation: any) => annotation.formFieldName === formField.name
+            );
+            if (widget) break;
+        }
+
+        if (widget) {
+            // Create a red color using PSPDFKit.Color (values between 0 and 1)
+            const redColor = new PSPDFKit.Color({ r: 1, g: 0, b: 0 });
+
+            // Chain the set operations to create a new widget
+            const updatedWidget = widget
+                .set('borderColor', redColor)
+                .set('borderWidth', 2)
+                .set('borderStyle', 'solid');
+
+            await instance.update([updatedWidget]);
+            console.log(`Successfully highlighted field ${formField.name}`);
+        } else {
+            console.log(`No widget found for field ${formField.name}`);
+        }
+    } catch (error) {
+        console.error('Error highlighting form field:', error);
+    }
+}
+
+export async function resetFormFieldHighlight(instance: any, fieldId: string): Promise<void> {
+    try {
+        const formFields = await instance.getFormFields();
+        console.log('All form fields:', formFields.map((f: any) => ({ name: f.name, value: f.value })));
+
+        const formField = formFields.find(
+            (field: any) => field.name === fieldId
+        );
+
+        if (!formField) {
+            console.log(`No field found with name ${fieldId}. Available fields:`,
+                formFields.map((f: any) => f.name));
+            return;
+        }
+
+        // Get total page count
+        const totalPages = instance.totalPageCount;
+        let widget = null;
+
+        // Search through all pages for the widget
+        for (let i = 0; i < totalPages; i++) {
+            const annotations = await instance.getAnnotations(i);
+            widget = annotations.find(
+                (annotation: any) => annotation.formFieldName === formField.name
+            );
+            if (widget) break;
+        }
+
+        if (widget) {
+            // Create a black color using PSPDFKit.Color (values between 0 and 1)
+            const blackColor = new PSPDFKit.Color({ r: 0, g: 0, b: 0 });
+
+            // Chain the set operations to create a new widget
+            const updatedWidget = widget
+                .set('borderColor', blackColor)
+                .set('borderWidth', 1)
+                .set('borderStyle', 'solid');
+
+            await instance.update([updatedWidget]);
+            console.log(`Successfully reset highlight for field ${formField.name}`);
+        } else {
+            console.log(`No widget found for field ${formField.name}`);
+        }
+    } catch (error) {
+        console.error('Error resetting form field highlight:', error);
+    }
+}
+
+export async function unmarkFormFields(instance: any): Promise<void> {
+    try {
+        console.log('Starting to unmark form fields...');
+
+        // Get all form fields
+        const formFields = await instance.getFormFields();
+
+        // Create an object to store all the updates
+        const updates: { [key: string]: string } = {};
+
+        // Go through each form field
+        formFields.forEach((field: any) => {
+            const currentValue = field.value?.toString() || '';
+
+            // Check if the current value matches our idx_ pattern
+            if (currentValue.match(/^idx_\d+$/)) {
+                console.log(`Unmarking field: ${field.name} (current value: ${currentValue})`);
+                updates[field.name] = '';
+            }
+        });
+
+        // Apply all updates at once if there are any
+        if (Object.keys(updates).length > 0) {
+            await instance.setFormFieldValues(updates);
+            console.log(`Successfully unmarked ${Object.keys(updates).length} fields`);
+        } else {
+            console.log('No marked fields found to unmark');
+        }
+
+    } catch (error) {
+        console.error('Error unmarking form fields:', error);
     }
 }
