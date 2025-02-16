@@ -232,6 +232,37 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
     const [isAnalyzing, setIsAnalyzing] = useState(false);
     const [filledFields, setFilledFields] = useState<TrackedField[]>([]);
 
+    const handleAnalyze = async (pdfInstance: any) => {
+        if (!pdfInstance) return;
+
+        try {
+            setIsAnalyzing(true);
+            const marked = await markFormFields(pdfInstance);
+
+            const images = await convertPagesToImages(pdfInstance);
+            const filledValues = await analyzeImages(images, knowledgeBase);
+
+            // Map the filled values to include the original field names from markedFields
+            const mappedFilledValues = filledValues.map(filled => {
+                const originalField = marked.find(m => m.marked_value === filled.field_id);
+                return {
+                    ...filled,
+                    name: filled.name,
+                    originalFieldName: originalField?.name || ""
+                };
+            });
+
+            setFilledFields(mappedFilledValues);
+
+            await fillAnalyzedFields(pdfInstance, filledValues);
+            await unmarkFormFields(pdfInstance);
+        } catch (error) {
+            console.error('Analysis failed:', error);
+        } finally {
+            setIsAnalyzing(false);
+        }
+    };
+
     useEffect(() => {
         const container = containerRef.current;
 
@@ -247,6 +278,7 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
                     baseUrl: `${window.location.protocol}//${window.location.host}/`,
                 }).then((pdfInstance) => {
                     setInstance(pdfInstance);
+                    handleAnalyze(pdfInstance);
                 });
             });
         }
@@ -260,37 +292,6 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
         };
     }, [url]);
 
-    const handleAnalyze = async () => {
-        if (!instance) return;
-
-        try {
-            setIsAnalyzing(true);
-            const marked = await markFormFields(instance);
-
-            const images = await convertPagesToImages(instance);
-            const filledValues = await analyzeImages(images, knowledgeBase);
-
-            // Map the filled values to include the original field names from markedFields
-            const mappedFilledValues = filledValues.map(filled => {
-                const originalField = marked.find(m => m.marked_value === filled.field_id);
-                return {
-                    ...filled,
-                    name: filled.name,
-                    originalFieldName: originalField?.name || ""
-                };
-            });
-
-            setFilledFields(mappedFilledValues);
-
-            await fillAnalyzedFields(instance, filledValues);
-            await unmarkFormFields(instance);
-        } catch (error) {
-            console.error('Analysis failed:', error);
-        } finally {
-            setIsAnalyzing(false);
-        }
-    };
-
     return (
         <div className="fixed inset-0 flex mt-16">
             {/* Main PDF viewer */}
@@ -303,13 +304,6 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
                         height: '100%'
                     }}
                 />
-                <Button
-                    className="absolute top-4 right-4 z-10"
-                    onClick={handleAnalyze}
-                    disabled={!instance || isAnalyzing}
-                >
-                    {isAnalyzing ? 'Analyzing...' : 'Analyze PDF'}
-                </Button>
             </div>
 
             {/* Sidebar Component */}
