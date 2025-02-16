@@ -2,7 +2,8 @@
 
 import { uploadDocument } from "@/app/actions";
 import { useRouter } from 'next/navigation'
-import { useState } from 'react'
+import { useState, useRef } from 'react'
+import { PlusIcon } from "lucide-react";
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB in bytes
 
@@ -11,6 +12,7 @@ export default function UploadForm() {
   const [isUploading, setIsUploading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [progress, setProgress] = useState<number>(0);
+  const formRef = useRef<HTMLFormElement>(null);
   
   const handleUpload = async (formData: FormData) => {
     try {
@@ -34,26 +36,20 @@ export default function UploadForm() {
   }
 
   return (
-    <form action={handleUpload} className="flex flex-col gap-4">
+    <form ref={formRef} action={handleUpload} className="h-full">
       {error && (
-        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
+        <div className="absolute top-4 left-4 right-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
           {error}
         </div>
       )}
-      <div>
-        <label 
-          htmlFor="document" 
-          className="block text-sm font-medium text-foreground mb-2"
-        >
-          Select PDF Document (max 10MB)
-        </label>
+      <div className="h-full border border-dashed border-foreground/20 rounded-lg flex items-center justify-center hover:border-foreground/40 transition-colors">
         <input
+          type="file"
           id="document"
           name="document"
-          type="file"
-          accept="application/pdf"
+          className="hidden"
+          accept=".pdf"
           required
-          className="w-full px-4 py-2 border rounded-md bg-background"
           onChange={(e) => {
             const file = e.target.files?.[0];
             if (file && file.size > MAX_FILE_SIZE) {
@@ -61,18 +57,28 @@ export default function UploadForm() {
               e.target.value = '';
             } else {
               setError(null);
+              // Auto-submit the form when a valid file is selected
+              formRef.current?.requestSubmit();
             }
           }}
         />
+        <label
+          htmlFor="document"
+          className="cursor-pointer flex flex-col items-center gap-4 p-12"
+        >
+          <div className="border rounded-lg p-4">
+            <PlusIcon className="w-6 h-6" />
+          </div>
+          <div>
+            <p className="font-medium">
+              {isUploading ? 'Uploading...' : 'Drop your PDF here'}
+            </p>
+            <p className="text-sm text-foreground/60 mt-1">
+              {isUploading ? `${progress}%` : 'or click to browse'}
+            </p>
+          </div>
+        </label>
       </div>
-      
-      <button
-        type="submit"
-        disabled={isUploading}
-        className="bg-primary text-primary-foreground px-4 py-2 rounded-md hover:bg-primary/90 transition disabled:opacity-50 disabled:cursor-not-allowed"
-      >
-        {isUploading ? 'Uploading...' : 'Upload Document'}
-      </button>
     </form>
   );
 } 

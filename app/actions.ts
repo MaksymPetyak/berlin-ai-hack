@@ -5,8 +5,7 @@ import { createClient } from "@/utils/supabase/server";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
-import { auth } from "@/auth";
-import { db } from "@/lib/db";
+
 
 export const signUpAction = async (formData: FormData) => {
   const email = formData.get("email")?.toString();

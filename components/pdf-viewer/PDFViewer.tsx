@@ -225,7 +225,8 @@ interface TrackedField {
 
 const PDFViewer: React.FC<PDFViewerProps> = ({
     url,
-    knowledgeBase,
+    width = '100%',
+    height = '100vh'
 }) => {
     const containerRef = useRef<HTMLDivElement | null>(null);
     const [instance, setInstance] = useState<any>(null);
@@ -267,6 +268,7 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
             setIsAnalyzing(true);
             const marked = await markFormFields(instance);
 
+            // Get pages as images
             const images = await convertPagesToImages(instance);
             const filledValues = await analyzeImages(images, knowledgeBase);
 
@@ -292,32 +294,23 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
     };
 
     return (
-        <div className="fixed inset-0 flex mt-16">
-            {/* Main PDF viewer */}
-            <div className="flex-1 relative bg-gray-100">
-                <div
-                    ref={containerRef}
-                    className="absolute inset-0"
-                    style={{
-                        width: '100%',
-                        height: '100%'
-                    }}
-                />
-                <Button
-                    className="absolute top-4 right-4 z-10"
-                    onClick={handleAnalyze}
-                    disabled={!instance || isAnalyzing}
-                >
-                    {isAnalyzing ? 'Analyzing...' : 'Analyze PDF'}
-                </Button>
-            </div>
-
-            {/* Sidebar Component */}
-            <Sidebar
-                isAnalyzing={isAnalyzing}
-                filledFields={filledFields}
-                instance={instance}
+        <div className="relative">
+            <div
+                ref={containerRef}
+                style={{
+                    width,
+                    height,
+                    minWidth: '300px',
+                    margin: '0 auto'
+                }}
             />
+            <Button
+                className="absolute top-4 right-4"
+                onClick={handleAnalyze}
+                disabled={!instance || isAnalyzing}
+            >
+                {isAnalyzing ? 'Analyzing...' : 'Analyze PDF'}
+            </Button>
         </div>
     );
 };
