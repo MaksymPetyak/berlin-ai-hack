@@ -15,7 +15,7 @@ const defaultUrl = process.env.VERCEL_URL
 
 export const metadata = {
   metadataBase: new URL(defaultUrl),
-  title: "Formzilla - Document Management",
+  title: "Just fill it - AI Form Filler",
   description: "Because not every German loves Bureaucracy 🇩🇪",
 };
 
