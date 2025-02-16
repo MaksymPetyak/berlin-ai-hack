@@ -1,7 +1,7 @@
 ## Just Fill It
 
 PDF form filler using vision LLMs and your knowledge base.
-Project for Berlin AI Hackathon.
+Project for Berlin AI Hackathon. (since this is a hackathon project, maybe don't put your bank details on it just yet)
 
 You can try it out here:
 [https://berlin-ai-hack.vercel.app/](https://berlin-ai-hack.vercel.app/)

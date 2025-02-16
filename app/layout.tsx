@@ -48,7 +48,7 @@ export default async function RootLayout({
                   {session && (
                     <Link
                       href={"/documents"}
-                      className="hover:text-foreground/80 transition font-normal"
+                      className="hover:text-foreground/80 transition font-normal text-sm"
                     >
                       Document Library
                     </Link>

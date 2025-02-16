@@ -4,6 +4,7 @@ import Link from "next/link";
 import { Badge } from "./ui/badge";
 import { Button } from "./ui/button";
 import { createClient } from "@/utils/supabase/server";
+import { GithubLink } from "./github-link";
 
 export default async function AuthButton() {
   const supabase = await createClient();
@@ -51,13 +52,13 @@ export default async function AuthButton() {
   return user ? (
     <div className="flex items-center gap-4">
       <div className="flex items-center gap-4">
-        Hey, {user.email}!
         <Link 
           href="/protected/profile"
           className="text-sm text-foreground/80 hover:text-foreground transition"
         >
-          Profile Settings
+          Profile
         </Link>
+        <GithubLink />
       </div>
       <form action={signOutAction}>
         <Button type="submit" variant={"outline"}>
@@ -67,6 +68,7 @@ export default async function AuthButton() {
     </div>
   ) : (
     <div className="flex gap-2">
+      <GithubLink />
       <Button asChild size="sm" variant={"outline"}>
         <Link href="/sign-in">Sign in</Link>
       </Button>
