@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useRef, useState } from 'react';
-import { Button } from '../ui/button';
 import { convertPagesToImages, markFormFields, fillAnalyzedFields, highlightFormField, resetFormFieldHighlight, unmarkFormFields } from '@/lib/pdf-utils';
 import { analyzeImages, FillFormOutput } from '@/lib/google-ai-utils';
 import { Card, CardHeader, CardTitle, CardContent } from '../ui/card';
