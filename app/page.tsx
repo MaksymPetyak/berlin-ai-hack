@@ -56,7 +56,7 @@ export default async function Home() {
 
           {/* Right side: Getting Started Steps */}
           <div className="p-8">
-            <h2 className="font-bold text-2xl mb-8">Getting Started</h2>
+            <h2 className="font-bold text-2xl mb-8">How it works</h2>
             <ol className="flex flex-col gap-6">
               <li className="flex gap-4 items-start">
                 <div className="flex-none bg-primary text-primary-foreground w-8 h-8 rounded-full flex items-center justify-center font-bold">1</div>

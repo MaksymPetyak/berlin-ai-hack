@@ -5,7 +5,6 @@ import { createClient } from "@/utils/supabase/server";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
-import { CustomField } from "@/lib/types";
 
 
 export const signUpAction = async (formData: FormData) => {
@@ -42,10 +41,10 @@ export const signUpAction = async (formData: FormData) => {
   }
 };
 
-export const signInAction = async (formData: FormData) => {
+export async function signInAction(formData: FormData) {
+  const supabase = await createClient();
   const email = formData.get("email") as string;
   const password = formData.get("password") as string;
-  const supabase = await createClient();
 
   const { error } = await supabase.auth.signInWithPassword({
     email,
@@ -56,8 +55,9 @@ export const signInAction = async (formData: FormData) => {
     return encodedRedirect("error", "/sign-in", error.message);
   }
 
-  return redirect("/protected");
-};
+  // Change this redirect to go to home page
+  return encodedRedirect("success", "/", "Welcome back!");
+}
 
 export const forgotPasswordAction = async (formData: FormData) => {
   const email = formData.get("email")?.toString();
@@ -388,14 +388,12 @@ export async function getUserProfile() {
 
     // Process custom fields to ensure they match the CustomField interface
     const processedCustomFields = Object.entries(profile.custom_fields || {}).reduce((acc, [key, field]) => {
-        const fieldObject = field as { id?: string; label?: string; type?: any; value?: string };
-        if (typeof fieldObject === 'object' && fieldObject !== null) {
+        if (typeof field === 'object' && field !== null) {
             acc[key] = {
-                // @ts-ignore
-                id: fieldObject.id || key,
-                label: fieldObject.label || key,
-                type: fieldObject.type || 'text',
-                value: fieldObject.value || ''
+                id: field.id || key,
+                label: field.label || key,
+                type: field.type || 'text',
+                value: field.value || ''
             };
         }
         return acc;
