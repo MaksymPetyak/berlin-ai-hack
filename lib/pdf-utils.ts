@@ -273,6 +273,7 @@ export async function highlightFormField(instance: any, fieldId: string): Promis
 
         if (widget) {
             // Create a red color using PSPDFKit.Color (values between 0 and 1)
+            // @ts-ignore
             const redColor = new PSPDFKit.Color({ r: 1, g: 0, b: 0 });
 
             // Chain the set operations to create a new widget
@@ -321,6 +322,7 @@ export async function resetFormFieldHighlight(instance: any, fieldId: string): P
 
         if (widget) {
             // Create a black color using PSPDFKit.Color (values between 0 and 1)
+            // @ts-ignore
             const blackColor = new PSPDFKit.Color({ r: 0, g: 0, b: 0 });
 
             // Chain the set operations to create a new widget

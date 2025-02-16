@@ -5,6 +5,7 @@ import { createClient } from "@/utils/supabase/server";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
+import { CustomField } from "@/lib/types";
 
 
 export const signUpAction = async (formData: FormData) => {
@@ -387,12 +388,14 @@ export async function getUserProfile() {
 
     // Process custom fields to ensure they match the CustomField interface
     const processedCustomFields = Object.entries(profile.custom_fields || {}).reduce((acc, [key, field]) => {
-        if (typeof field === 'object' && field !== null) {
+        const fieldObject = field as { id?: string; label?: string; type?: any; value?: string };
+        if (typeof fieldObject === 'object' && fieldObject !== null) {
             acc[key] = {
-                id: field.id || key,
-                label: field.label || key,
-                type: field.type || 'text',
-                value: field.value || ''
+                // @ts-ignore
+                id: fieldObject.id || key,
+                label: fieldObject.label || key,
+                type: fieldObject.type || 'text',
+                value: fieldObject.value || ''
             };
         }
         return acc;

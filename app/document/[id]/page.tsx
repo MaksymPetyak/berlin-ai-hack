@@ -2,13 +2,16 @@ import { createClient } from '@/utils/supabase/server'
 import { PDFViewer } from '@/components/pdf-viewer/PDFViewer'
 import { notFound, redirect } from 'next/navigation'
 
-interface DocumentPageProps {
-  params: {
-    id: string
-  }
+interface PageProps {
+  params: Promise<{ id: string }>
 }
 
-export default async function DocumentPage({ params }: DocumentPageProps) {
+export default async function DocumentPage({ params }: PageProps) {
+  const resolvedParams = await params
+  if (!resolvedParams?.id) {
+    notFound()
+  }
+
   const supabase = await createClient()
 
   // Add auth check
@@ -21,7 +24,7 @@ export default async function DocumentPage({ params }: DocumentPageProps) {
   const { data: document, error } = await supabase
     .from('documents')
     .select('*')
-    .eq('id', params.id)
+    .eq('id', resolvedParams.id)
     .eq('user_id', user.id)
     .single()
 
@@ -60,10 +63,8 @@ export default async function DocumentPage({ params }: DocumentPageProps) {
     `Phone Number: ${profile.phone_number || ''}`,
     `Address: ${profile.address || ''}`,
     // Add custom fields if they exist
-    ...Object.entries(profile.custom_fields || {}).map(([key, value]) => `${key}: ${value}`)
+    ...(profile?.custom_fields ? Object.entries(profile.custom_fields).map(([key, value]) => `${key}: ${value}`) : [])
   ].join('\n') : ''
-
-  console.log("Knowledge Base: ", knowledgeBase)
 
   return (
     <div className="min-w-screen h-full">

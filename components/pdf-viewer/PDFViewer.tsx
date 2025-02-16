@@ -278,14 +278,16 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
         if (container && typeof window !== 'undefined') {
             import('pspdfkit').then((PSPDFKit) => {
                 if (PSPDFKit) {
+                    // @ts-ignore
                     PSPDFKit.unload(container);
                 }
 
+                // @ts-ignore
                 PSPDFKit.load({
                     container,
                     document: url,
                     baseUrl: `${window.location.protocol}//${window.location.host}/`,
-                }).then((pdfInstance) => {
+                }).then((pdfInstance: any) => {
                     setInstance(pdfInstance);
                     handleAnalyze(pdfInstance);
                 });
@@ -295,6 +297,7 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
         return () => {
             if (container && typeof window !== 'undefined') {
                 import('pspdfkit').then((PSPDFKit) => {
+                    // @ts-ignore
                     PSPDFKit.unload(container);
                 });
             }
