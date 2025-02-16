@@ -8,10 +8,19 @@ const nextConfig: NextConfig = {
     }
   },
   webpack: (config, { isServer }) => {
+    // Initialize externals array if it doesn't exist
+    config.externals = config.externals || [];
+
     if (isServer) {
-      // Prevent PSPDFKit from being bundled on the server
-      config.externals = [...config.externals, 'pspdfkit'];
+      // Server-side: Add pspdfkit to externals
+      config.externals.push('pspdfkit');
+    } else {
+      // Client-side: Configure pspdfkit as external with proper loading
+      config.externals.push({
+        pspdfkit: 'PSPDFKit'
+      });
     }
+
     return config;
   },
 };
