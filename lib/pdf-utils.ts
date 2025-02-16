@@ -224,7 +224,7 @@ export async function fillAnalyzedFields(instance: any, analyzedFields: { field_
 
             // Find if we have an analyzed value for this ID
             const analyzedField = analyzedFields.find(af => af.field_id === currentValue);
-            if (analyzedField) {
+            if (analyzedField && analyzedField.value !== '') {
                 updatedFormFieldValues[field.name] = analyzedField.value;
                 console.log(`Updating field ${field.name} with value ${analyzedField.value}`);
             }

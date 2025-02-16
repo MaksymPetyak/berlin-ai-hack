@@ -12,18 +12,24 @@ interface PDFViewerProps {
     knowledgeBase: string;
 }
 interface FormFieldCardProps {
-    field: FillFormOutput;
+    field: TrackedField;
     instance: any;
+    currentValue: string;
 }
 
-const FormFieldCard: React.FC<FormFieldCardProps> = ({ field, instance }) => {
+const FormFieldCard: React.FC<FormFieldCardProps> = ({ field, instance, currentValue }) => {
     const handleMouseEnter = async () => {
-        await highlightFormField(instance, field.name);
+        await highlightFormField(instance, field.originalFieldName);
     };
 
     const handleMouseLeave = async () => {
-        await resetFormFieldHighlight(instance, field.name);
+        await resetFormFieldHighlight(instance, field.originalFieldName);
     };
+
+
+    if (!currentValue) {
+        return null
+    }
 
     return (
         <Card
@@ -37,7 +43,9 @@ const FormFieldCard: React.FC<FormFieldCardProps> = ({ field, instance }) => {
                         <CardTitle className="text-xs font-semibold text-gray-600 mb-1">
                             {field.name}
                         </CardTitle>
-                        <p className="text-sm">{field.value}</p>
+                        <div className="space-y-1">
+                            <span className="font-medium">{currentValue || 'Empty'}</span>
+                        </div>
                     </div>
                     <div className="flex gap-2 ml-2">
                         <button className="text-green-500 hover:text-green-600">
@@ -55,32 +63,80 @@ const FormFieldCard: React.FC<FormFieldCardProps> = ({ field, instance }) => {
 
 interface SidebarProps {
     isAnalyzing: boolean;
-    filledFields: FillFormOutput[];
+    filledFields: TrackedField[];
     instance: any;
 }
 
 const Sidebar: React.FC<SidebarProps> = ({ isAnalyzing, filledFields, instance }) => {
+    const [currentValues, setCurrentValues] = useState<{ [key: string]: string }>({});
+
+    // Function to update current field values
+    const updateCurrentValues = async () => {
+        if (!instance) return;
+
+        try {
+            const formFields = await instance.getFormFields();
+            const values: { [key: string]: string } = {};
+
+            formFields.forEach((field: any) => {
+                values[field.name] = field.value || '';
+            });
+
+            console.log("Form Fields:", formFields);
+            console.log("Values:", values);
+            setCurrentValues(values);
+        } catch (error) {
+            console.error('Error getting current field values:', error);
+        }
+    };
+
+    // Poll for changes every second
+    useEffect(() => {
+        if (!instance) return;
+
+        // Initial update
+        updateCurrentValues();
+
+        // Set up polling
+        const intervalId = setInterval(updateCurrentValues, 1000);
+
+        return () => {
+            clearInterval(intervalId);
+        };
+    }, [instance]);
+
+    console.log("Current Values: ", currentValues)
+    console.log("Filled Fields: ", filledFields)
+
     return (
         <div className="w-96 h-full bg-gray-50 p-4 overflow-y-auto border-l">
             <div className="mb-4">
-                <h2 className="text-lg font-semibold mb-1">Fields</h2>
-                <p className={`text-sm ${filledFields.length === 0 ? 'text-gray-400' : 'text-gray-600'}`}>
-                    {filledFields.length > 0
-                        ? `${filledFields.length} fields auto-filled`
-                        : isAnalyzing
-                            ? 'Analyzing form fields...'
+                <h2 className="text-lg font-semibold mb-1">Form Fields</h2>
+                <p className={`text-sm ${isAnalyzing ? 'text-blue-600' : filledFields.length === 0 ? 'text-gray-400' : 'text-gray-600'}`}>
+                    {isAnalyzing
+                        ? 'Analyzing form fields...'
+                        : filledFields.length > 0
+                            ? `${filledFields.length} fields detected`
                             : 'No fields analyzed yet'
                     }
                 </p>
             </div>
-            {filledFields.length > 0 && (
-                filledFields.map((field, index) => (
+
+            <div className="space-y-2">
+                {filledFields.map((field, index) => (
                     <FormFieldCard
-                        key={index}
+                        key={`${field.field_id}-${index}`}
                         field={field}
                         instance={instance}
+                        currentValue={currentValues[field.originalFieldName] || ''}
                     />
-                ))
+                ))}
+            </div>
+
+            {!isAnalyzing && filledFields.length === 0 && (
+                <div className="text-center text-gray-500 mt-8">
+                    <p>Click "Analyze PDF" to start</p>
+                </div>
             )}
         </div>
     );
@@ -92,6 +148,13 @@ interface MarkedField {
     marked_value: string;
 }
 
+interface TrackedField {
+    field_id: string;
+    name: string;
+    originalFieldName: string;
+    value: string;
+}
+
 const PDFViewer: React.FC<PDFViewerProps> = ({
     url,
     knowledgeBase,
@@ -99,8 +162,7 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
     const containerRef = useRef<HTMLDivElement | null>(null);
     const [instance, setInstance] = useState<any>(null);
     const [isAnalyzing, setIsAnalyzing] = useState(false);
-    const [filledFields, setFilledFields] = useState<FillFormOutput[]>([]);
-    const [markedFields, setMarkedFields] = useState<MarkedField[]>([]);
+    const [filledFields, setFilledFields] = useState<TrackedField[]>([]);
 
     useEffect(() => {
         const container = containerRef.current;
@@ -136,7 +198,6 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
         try {
             setIsAnalyzing(true);
             const marked = await markFormFields(instance);
-            setMarkedFields(marked);
 
             const images = await convertPagesToImages(instance);
             const filledValues = await analyzeImages(images, knowledgeBase);
@@ -146,7 +207,8 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
                 const originalField = marked.find(m => m.marked_value === filled.field_id);
                 return {
                     ...filled,
-                    name: originalField?.name || filled.name
+                    name: filled.name,
+                    originalFieldName: originalField?.name || ""
                 };
             });
 
