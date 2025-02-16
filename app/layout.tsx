@@ -1,7 +1,6 @@
 import DeployButton from "@/components/deploy-button";
 import { EnvVarWarning } from "@/components/env-var-warning";
 import HeaderAuth from "@/components/header-auth";
-import { ThemeSwitcher } from "@/components/theme-switcher";
 import { hasEnvVars } from "@/utils/supabase/check-env-vars";
 import { Geist } from "next/font/google";
 import { ThemeProvider } from "next-themes";
@@ -37,8 +36,8 @@ export default async function RootLayout({
       <body className="bg-background text-foreground">
         <ThemeProvider
           attribute="class"
-          defaultTheme="system"
-          enableSystem
+          defaultTheme="light"
+          forcedTheme="light"
           disableTransitionOnChange
         >
           <div className="min-h-screen flex flex-col">
@@ -47,8 +46,8 @@ export default async function RootLayout({
                 <div className="flex gap-5 items-center font-semibold">
                   <Link href={"/"}>Just fill it™</Link>
                   {session && (
-                    <Link 
-                      href={"/documents"} 
+                    <Link
+                      href={"/documents"}
                       className="hover:text-foreground/80 transition font-normal"
                     >
                       Document Library
@@ -68,7 +67,6 @@ export default async function RootLayout({
                 <p>
                   Because not every German loves Bureaucracy 🇩🇪
                 </p>
-                <ThemeSwitcher />
               </div>
             </footer>
           </div>
