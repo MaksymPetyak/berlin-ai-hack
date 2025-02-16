@@ -14,8 +14,8 @@ export default async function Home() {
       <div className="grid md:grid-cols-2 items-center gap-4 py-4">
         {/* Left side: Text */}
         <div className="flex flex-col justify-center text-center md:text-left">
-          <h1 className="text-3xl font-bold mb-2">Welcome to Formzilla</h1>
-          <p className="text-lg text-foreground/80">Make your paperwork go poof✨</p>
+          <h1 className="text-3xl font-bold mb-2">Just fill it™</h1>
+          <p className="text-lg text-foreground/80">Nike for paperwork🏃</p>
         </div>
         
         {/* Right side: Image */}
