@@ -6,6 +6,7 @@ import { convertPagesToImages, markFormFields, fillAnalyzedFields, highlightForm
 import { analyzeImages, FillFormOutput } from '@/lib/google-ai-utils';
 import { Card, CardHeader, CardTitle, CardContent } from '../ui/card';
 import { CheckCircle2, XCircle } from 'lucide-react';
+import { createClient } from '@/utils/supabase/client';
 
 interface PDFViewerProps {
     url: string;
@@ -15,9 +16,11 @@ interface FormFieldCardProps {
     field: TrackedField;
     instance: any;
     currentValue: string;
+    onIgnore: (fieldId: string) => void;
+    onAccept: (field: TrackedField, currentValue: string) => void;
 }
 
-const FormFieldCard: React.FC<FormFieldCardProps> = ({ field, instance, currentValue }) => {
+const FormFieldCard: React.FC<FormFieldCardProps> = ({ field, instance, currentValue, onIgnore, onAccept }) => {
     const handleMouseEnter = async () => {
         await highlightFormField(instance, field.originalFieldName);
     };
@@ -25,7 +28,6 @@ const FormFieldCard: React.FC<FormFieldCardProps> = ({ field, instance, currentV
     const handleMouseLeave = async () => {
         await resetFormFieldHighlight(instance, field.originalFieldName);
     };
-
 
     if (!currentValue) {
         return null
@@ -48,10 +50,16 @@ const FormFieldCard: React.FC<FormFieldCardProps> = ({ field, instance, currentV
                         </div>
                     </div>
                     <div className="flex gap-2 ml-2">
-                        <button className="text-green-500 hover:text-green-600">
+                        <button
+                            className="text-green-500 hover:text-green-600"
+                            onClick={() => onAccept(field, currentValue)}
+                        >
                             <CheckCircle2 className="h-5 w-5" />
                         </button>
-                        <button className="text-red-500 hover:text-red-600">
+                        <button
+                            className="text-red-500 hover:text-red-600"
+                            onClick={() => onIgnore(field.field_id)}
+                        >
                             <XCircle className="h-5 w-5" />
                         </button>
                     </div>
@@ -69,6 +77,8 @@ interface SidebarProps {
 
 const Sidebar: React.FC<SidebarProps> = ({ isAnalyzing, filledFields, instance }) => {
     const [currentValues, setCurrentValues] = useState<{ [key: string]: string }>({});
+    const [ignoredFields, setIgnoredFields] = useState<Set<string>>(new Set());
+    const [customFields, setCustomFields] = useState<Record<string, string>>({});
 
     // Function to update current field values
     const updateCurrentValues = async () => {
@@ -82,8 +92,6 @@ const Sidebar: React.FC<SidebarProps> = ({ isAnalyzing, filledFields, instance }
                 values[field.name] = field.value || '';
             });
 
-            console.log("Form Fields:", formFields);
-            console.log("Values:", values);
             setCurrentValues(values);
         } catch (error) {
             console.error('Error getting current field values:', error);
@@ -105,37 +113,97 @@ const Sidebar: React.FC<SidebarProps> = ({ isAnalyzing, filledFields, instance }
         };
     }, [instance]);
 
-    console.log("Current Values: ", currentValues)
-    console.log("Filled Fields: ", filledFields)
+    const handleIgnore = (fieldId: string) => {
+        setIgnoredFields(prev => {
+            const newSet = new Set(prev);
+            newSet.add(fieldId);
+            return newSet;
+        });
+    };
+
+    const handleAccept = async (field: TrackedField, currentValue: string) => {
+        // Add to custom fields
+        setCustomFields(prev => ({
+            ...prev,
+            [field.name]: currentValue
+        }));
+
+        // Add to ignored fields to remove from display
+        setIgnoredFields(prev => {
+            const newSet = new Set(prev);
+            newSet.add(field.field_id);
+            return newSet;
+        });
+
+        // Update user profile with new custom field
+        try {
+            const supabase = createClient();
+            const { data: { user } } = await supabase.auth.getUser();
+
+            if (!user) {
+                console.error('No user found');
+                return;
+            }
+
+            const { data: profile } = await supabase
+                .from('user_profiles')
+                .select('custom_fields')
+                .eq('id', user.id)
+                .single();
+
+            const updatedCustomFields = {
+                ...(profile?.custom_fields || {}),
+                [field.name]: currentValue
+            };
+
+            await supabase
+                .from('user_profiles')
+                .upsert({
+                    id: user.id,
+                    custom_fields: updatedCustomFields,
+                    updated_at: new Date().toISOString()
+                });
+
+        } catch (error) {
+            console.error('Error updating profile:', error);
+        }
+    };
+
+    // Filter out fields that were successfully pre-filled or ignored
+    const fieldsToShow = filledFields.filter(field =>
+        !field.value && !ignoredFields.has(field.field_id)
+    );
 
     return (
         <div className="w-96 h-full bg-gray-50 p-4 overflow-y-auto border-l">
             <div className="mb-4">
-                <h2 className="text-lg font-semibold mb-1">Form Fields</h2>
-                <p className={`text-sm ${isAnalyzing ? 'text-blue-600' : filledFields.length === 0 ? 'text-gray-400' : 'text-gray-600'}`}>
+                <h2 className="text-lg font-semibold mb-1">Update Knowledge Base</h2>
+                <p className={`text-sm ${isAnalyzing ? 'text-blue-600' : fieldsToShow.length === 0 ? 'text-gray-400' : 'text-gray-600'}`}>
                     {isAnalyzing
                         ? 'Analyzing form fields...'
-                        : filledFields.length > 0
-                            ? `${filledFields.length} fields detected`
-                            : 'No fields analyzed yet'
+                        : fieldsToShow.length > 0
+                            ? `${fieldsToShow.length} fields need attention`
+                            : 'All fields are filled'
                     }
                 </p>
             </div>
 
             <div className="space-y-2">
-                {filledFields.map((field, index) => (
+                {fieldsToShow.map((field, index) => (
                     <FormFieldCard
                         key={`${field.field_id}-${index}`}
                         field={field}
                         instance={instance}
                         currentValue={currentValues[field.originalFieldName] || ''}
+                        onIgnore={handleIgnore}
+                        onAccept={handleAccept}
                     />
                 ))}
             </div>
 
-            {!isAnalyzing && filledFields.length === 0 && (
+            {!isAnalyzing && fieldsToShow.length === 0 && (
                 <div className="text-center text-gray-500 mt-8">
-                    <p>Click "Analyze PDF" to start</p>
+                    <p>All fields have been filled</p>
                 </div>
             )}
         </div>
