@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from 'react';
-import { convertPagesToImages, markFormFields, fillAnalyzedFields, highlightFormField, resetFormFieldHighlight, unmarkFormFields } from '@/lib/pdf-utils';
+import { convertPagesToImages, markFormFields, fillAnalyzedFields, unmarkFormFields } from '@/lib/pdf-utils';
 import { analyzeImages, FillFormOutput } from '@/lib/google-ai-utils';
 import { Card, CardHeader, CardTitle, CardContent } from '../ui/card';
 import { CheckCircle2, XCircle } from 'lucide-react';
@@ -22,13 +22,13 @@ interface FormFieldCardProps {
 const FormFieldCard: React.FC<FormFieldCardProps> = ({ field, instance, currentValue, onIgnore, onAccept }) => {
     const [editedName, setEditedName] = useState(field.name);
 
-    const handleMouseEnter = async () => {
-        await highlightFormField(instance, field.originalFieldName);
-    };
+    // const handleMouseEnter = async () => {
+    //     await highlightFormField(instance, field.originalFieldName);
+    // };
 
-    const handleMouseLeave = async () => {
-        await resetFormFieldHighlight(instance, field.originalFieldName);
-    };
+    // const handleMouseLeave = async () => {
+    //     await resetFormFieldHighlight(instance, field.originalFieldName);
+    // };
 
     if (!currentValue) {
         return null
@@ -37,8 +37,8 @@ const FormFieldCard: React.FC<FormFieldCardProps> = ({ field, instance, currentV
     return (
         <Card
             className="mb-4 w-full hover:shadow-md transition-shadow duration-200"
-            onMouseEnter={handleMouseEnter}
-            onMouseLeave={handleMouseLeave}
+            // onMouseEnter={handleMouseEnter}
+            // onMouseLeave={handleMouseLeave}
         >
             <CardHeader className="p-4">
                 <div className="flex flex-col">

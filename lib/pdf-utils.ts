@@ -1,5 +1,3 @@
-import PSPDFKit from 'pspdfkit';
-
 interface FormField {
     id: string;
     name: string;
@@ -242,104 +240,103 @@ export async function fillAnalyzedFields(instance: any, analyzedFields: { field_
     }
 }
 
-export async function highlightFormField(instance: any, fieldId: string): Promise<void> {
-    try {
-        const formFields = await instance.getFormFields();
-        console.log('All form fields:', formFields.map((f: any) => ({ name: f.name, value: f.value })));
+// export async function highlightFormField(instance: any, fieldId: string): Promise<void> {
+//     try {
+//         const formFields = await instance.getFormFields();
+//         console.log('All form fields:', formFields.map((f: any) => ({ name: f.name, value: f.value })));
 
-        // First get all form fields to find the one with matching name
-        const formField = formFields.find(
-            (field: any) => field.name === fieldId
-        );
+//         // First get all form fields to find the one with matching name
+//         const formField = formFields.find(
+//             (field: any) => field.name === fieldId
+//         );
 
-        if (!formField) {
-            console.log(`No field found with name ${fieldId}. Available fields:`,
-                formFields.map((f: any) => f.name));
-            return;
-        }
+//         if (!formField) {
+//             console.log(`No field found with name ${fieldId}. Available fields:`,
+//                 formFields.map((f: any) => f.name));
+//             return;
+//         }
 
-        // Get total page count
-        const totalPages = instance.totalPageCount;
-        let widget = null;
+//         // Get total page count
+//         const totalPages = instance.totalPageCount;
+//         let widget = null;
 
-        // Search through all pages for the widget
-        for (let i = 0; i < totalPages; i++) {
-            const annotations = await instance.getAnnotations(i);
-            widget = annotations.find(
-                (annotation: any) => annotation.formFieldName === formField.name
-            );
-            if (widget) break;
-        }
+//         // Search through all pages for the widget
+//         for (let i = 0; i < totalPages; i++) {
+//             const annotations = await instance.getAnnotations(i);
+//             widget = annotations.find(
+//                 (annotation: any) => annotation.formFieldName === formField.name
+//             );
+//             if (widget) break;
+//         }
 
-        if (widget) {
-            // Create a red color using PSPDFKit.Color (values between 0 and 1)
-            // @ts-ignore
-            const redColor = new PSPDFKit.Color({ r: 1, g: 0, b: 0 });
+//         if (widget) {
+//             // Create a red color using PSPDFKit.Color (values between 0 and 1)
+//             const redColor = new PSPDFKit.Color({ r: 1, g: 0, b: 0 });
 
-            // Chain the set operations to create a new widget
-            const updatedWidget = widget
-                .set('borderColor', redColor)
-                .set('borderWidth', 2)
-                .set('borderStyle', 'solid');
+//             // Chain the set operations to create a new widget
+//             const updatedWidget = widget
+//                 .set('borderColor', redColor)
+//                 .set('borderWidth', 2)
+//                 .set('borderStyle', 'solid');
 
-            await instance.update([updatedWidget]);
-            console.log(`Successfully highlighted field ${formField.name}`);
-        } else {
-            console.log(`No widget found for field ${formField.name}`);
-        }
-    } catch (error) {
-        console.error('Error highlighting form field:', error);
-    }
-}
+//             await instance.update([updatedWidget]);
+//             console.log(`Successfully highlighted field ${formField.name}`);
+//         } else {
+//             console.log(`No widget found for field ${formField.name}`);
+//         }
+//     } catch (error) {
+//         console.error('Error highlighting form field:', error);
+//     }
+// }
 
-export async function resetFormFieldHighlight(instance: any, fieldId: string): Promise<void> {
-    try {
-        const formFields = await instance.getFormFields();
-        console.log('All form fields:', formFields.map((f: any) => ({ name: f.name, value: f.value })));
+// export async function resetFormFieldHighlight(instance: any, fieldId: string): Promise<void> {
+//     try {
+//         const formFields = await instance.getFormFields();
+//         console.log('All form fields:', formFields.map((f: any) => ({ name: f.name, value: f.value })));
 
-        const formField = formFields.find(
-            (field: any) => field.name === fieldId
-        );
+//         const formField = formFields.find(
+//             (field: any) => field.name === fieldId
+//         );
 
-        if (!formField) {
-            console.log(`No field found with name ${fieldId}. Available fields:`,
-                formFields.map((f: any) => f.name));
-            return;
-        }
+//         if (!formField) {
+//             console.log(`No field found with name ${fieldId}. Available fields:`,
+//                 formFields.map((f: any) => f.name));
+//             return;
+//         }
 
-        // Get total page count
-        const totalPages = instance.totalPageCount;
-        let widget = null;
+//         // Get total page count
+//         const totalPages = instance.totalPageCount;
+//         let widget = null;
 
-        // Search through all pages for the widget
-        for (let i = 0; i < totalPages; i++) {
-            const annotations = await instance.getAnnotations(i);
-            widget = annotations.find(
-                (annotation: any) => annotation.formFieldName === formField.name
-            );
-            if (widget) break;
-        }
+//         // Search through all pages for the widget
+//         for (let i = 0; i < totalPages; i++) {
+//             const annotations = await instance.getAnnotations(i);
+//             widget = annotations.find(
+//                 (annotation: any) => annotation.formFieldName === formField.name
+//             );
+//             if (widget) break;
+//         }
 
-        if (widget) {
-            // Create a black color using PSPDFKit.Color (values between 0 and 1)
-            // @ts-ignore
-            const blackColor = new PSPDFKit.Color({ r: 0, g: 0, b: 0 });
+//         if (widget) {
+//             // Create a black color using PSPDFKit.Color (values between 0 and 1)
+//             // @ts-ignore
+//             const blackColor = new PSPDFKit.Color({ r: 0, g: 0, b: 0 });
 
-            // Chain the set operations to create a new widget
-            const updatedWidget = widget
-                .set('borderColor', blackColor)
-                .set('borderWidth', 1)
-                .set('borderStyle', 'solid');
+//             // Chain the set operations to create a new widget
+//             const updatedWidget = widget
+//                 .set('borderColor', blackColor)
+//                 .set('borderWidth', 1)
+//                 .set('borderStyle', 'solid');
 
-            await instance.update([updatedWidget]);
-            console.log(`Successfully reset highlight for field ${formField.name}`);
-        } else {
-            console.log(`No widget found for field ${formField.name}`);
-        }
-    } catch (error) {
-        console.error('Error resetting form field highlight:', error);
-    }
-}
+//             await instance.update([updatedWidget]);
+//             console.log(`Successfully reset highlight for field ${formField.name}`);
+//         } else {
+//             console.log(`No widget found for field ${formField.name}`);
+//         }
+//     } catch (error) {
+//         console.error('Error resetting form field highlight:', error);
+//     }
+// }
 
 export async function unmarkFormFields(instance: any): Promise<void> {
     try {
