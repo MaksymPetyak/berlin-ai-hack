@@ -22,14 +22,6 @@ interface FormFieldCardProps {
 const FormFieldCard: React.FC<FormFieldCardProps> = ({ field, instance, currentValue, onIgnore, onAccept }) => {
     const [editedName, setEditedName] = useState(field.name);
 
-    // const handleMouseEnter = async () => {
-    //     await highlightFormField(instance, field.originalFieldName);
-    // };
-
-    // const handleMouseLeave = async () => {
-    //     await resetFormFieldHighlight(instance, field.originalFieldName);
-    // };
-
     if (!currentValue) {
         return null
     }
@@ -37,8 +29,6 @@ const FormFieldCard: React.FC<FormFieldCardProps> = ({ field, instance, currentV
     return (
         <Card
             className="mb-4 w-full hover:shadow-md transition-shadow duration-200"
-            // onMouseEnter={handleMouseEnter}
-            // onMouseLeave={handleMouseLeave}
         >
             <CardHeader className="p-4">
                 <div className="flex flex-col">
@@ -217,12 +207,6 @@ const Sidebar: React.FC<SidebarProps> = ({ isAnalyzing, filledFields, instance }
         </div>
     );
 };
-
-interface MarkedField {
-    field_id: string;
-    name: string;
-    marked_value: string;
-}
 
 interface TrackedField {
     field_id: string;
