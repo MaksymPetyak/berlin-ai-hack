@@ -22,7 +22,8 @@ Unfilled fields will be marked like "idx_{num}" to indicate what is the id of th
 You will also be provided with a knowledge base to use to fill out the form.
 
 Your job is to generate the list of fields to fill out and the value you would put in the field if it's available.
-RETURN ALL THE FIELDS EVEN IF THEY ARE EMPTY
+RETURN ALL THE FIELDS EVEN IF THEY ARE EMPTY. 
+YOU MUST MATCH THE FIELD ID TO THE MOST RELEVANT IDX FIELD THAT IS THE CLOSEST TO THE FIELD THAT NEEDS TO BE FILLED.
 
 You must output JSON in the following format:
 {

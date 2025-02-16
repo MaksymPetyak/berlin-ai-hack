@@ -21,6 +21,8 @@ interface FormFieldCardProps {
 }
 
 const FormFieldCard: React.FC<FormFieldCardProps> = ({ field, instance, currentValue, onIgnore, onAccept }) => {
+    const [editedName, setEditedName] = useState(field.name);
+
     const handleMouseEnter = async () => {
         await highlightFormField(instance, field.originalFieldName);
     };
@@ -40,27 +42,34 @@ const FormFieldCard: React.FC<FormFieldCardProps> = ({ field, instance, currentV
             onMouseLeave={handleMouseLeave}
         >
             <CardHeader className="p-4">
-                <div className="flex justify-between items-start">
+                <div className="flex flex-col">
                     <div className="flex-1">
-                        <CardTitle className="text-xs font-semibold text-gray-600 mb-1">
-                            {field.name}
-                        </CardTitle>
+                        <div className="relative group">
+                            <input
+                                type="text"
+                                value={editedName}
+                                onChange={(e) => setEditedName(e.target.value)}
+                                className="text-xs font-semibold text-gray-600 mb-1 w-full bg-transparent border-none p-0 focus:outline-none focus:ring-0 hover:bg-gray-50 rounded transition-colors"
+                            />
+                        </div>
                         <div className="space-y-1">
-                            <span className="font-medium">{currentValue || 'Empty'}</span>
+                            <span className="font-medium">{currentValue}</span>
                         </div>
                     </div>
-                    <div className="flex gap-2 ml-2">
+                    <div className="flex w-full gap-2 mt-4 text-sm justify-end">
                         <button
-                            className="text-green-500 hover:text-green-600"
-                            onClick={() => onAccept(field, currentValue)}
-                        >
-                            <CheckCircle2 className="h-5 w-5" />
-                        </button>
-                        <button
-                            className="text-red-500 hover:text-red-600"
+                            className="flex items-center gap-1 px-3 py-1 rounded-md border border-gray-300 text-gray-500 hover:bg-gray-50"
                             onClick={() => onIgnore(field.field_id)}
                         >
-                            <XCircle className="h-5 w-5" />
+                            <XCircle className="h-4 w-4" />
+                            <span>Hide</span>
+                        </button>
+                        <button
+                            className="flex items-center gap-1 px-3 py-1 rounded-md border border-green-600 text-green-600 hover:bg-green-50"
+                            onClick={() => onAccept({ ...field, name: editedName }, currentValue)}
+                        >
+                            <CheckCircle2 className="h-4 w-4" />
+                            <span>Add to knowledge base</span>
                         </button>
                     </div>
                 </div>
