@@ -15,7 +15,7 @@ export default async function Home() {
         {/* Left side: Text */}
         <div className="flex flex-col justify-center text-center md:text-left">
           <h1 className="text-3xl font-bold mb-2">Just fill it™</h1>
-          <p className="text-lg text-foreground/80">Same spirit as nike - but for paperwork🏃</p>
+          <p className="text-lg text-foreground/80">Same spirit as Nike - but for paperwork🏃</p>
         </div>
         
         {/* Right side: Image */}
