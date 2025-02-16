@@ -21,7 +21,7 @@ export function CustomFields({ initialFields = {} }: { initialFields: Record<str
     <>
       {/* Existing Custom Fields */}
       {Object.entries(initialFields).map(([key, value]) => (
-        <div key={key} className="mb-4">
+        <div key={key}>
           <label 
             htmlFor={`custom_${key}`}
             className="block text-sm font-medium text-foreground mb-2"
